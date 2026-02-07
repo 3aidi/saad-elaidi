@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المنصة التعليمية المميزة</title>
+
+  <!-- Essential Metadata -->
+  <meta name="description" content="منصة تعليمية متطورة لإدارة الدروس والاختبارات">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Visual Styles -->
+  <script src="/version.js"></script>
+  <link rel="stylesheet" href="/styles.css?v=2.0.0">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-box">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div>
+          <h2 class="sidebar-platform-label" data-identity="platform-label">المنصة</h2>
+          <span class="sidebar-school-name" data-identity="school-name">مدرسة أبو فراس</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-navigate="/">
+          <i class="fas fa-th-large"></i>
+          <span>الرئيسية</span>
+        </div>
+        <div class="nav-item" data-navigate="/classes">
+          <i class="fas fa-book-open"></i>
+          <span>الصفوف الدراسية</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-help-wrap">
+        <div class="sidebar-help-box">
+          <p class="sidebar-help-text">تحتاج مساعدة؟</p>
+          <a href="#" class="sidebar-help-link">اتصل بالإدارة</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="main-content">
+      <!-- Header / Top Bar -->
+      <header class="main-header">
+        <button id="sidebarToggle" type="button" class="sidebar-toggle-btn" title="فتح القائمة" aria-label="فتح القائمة">
+          <i class="fas fa-bars-staggered" aria-hidden="true"></i>
+        </button>
+
+        <div class="main-header-right">
+          <div class="main-header-greeting">
+            <p class="main-header-greeting-label">مرحباً بك</p>
+            <p class="main-header-greeting-name">طالبنا العزيز</p>
+          </div>
+          <div class="main-header-avatar">
+            <i class="fas fa-user-graduate" aria-hidden="true"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic App Section -->
+      <div id="app">
+        <div class="loading">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          <span>جارٍ تهيئة المحتوى...</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Navigation Bar -->
+  <nav class="mobile-nav">
+    <div class="nav-item active" data-navigate="/">
+      <i class="fas fa-home"></i>
+    </div>
+    <div class="nav-item" data-navigate="/classes">
+      <i class="fas fa-grid-2"></i>
+    </div>
+  </nav>
+
+  <!-- Core Scripts -->
+  <script src="/config.js"></script>
+  <script src="/app.js?v=2.0.0"></script>
+</body>
+
+</html>
