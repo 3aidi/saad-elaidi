@@ -201,7 +201,7 @@ function showAlert(message, type = 'success') {
   }
 }
 function initCustomSelects(container = document) {
-  const selects = container.querySelectorAll('select:not(.custom-select-hidden)');
+  const selects = container.querySelectorAll('select:not(.custom-select-hidden):not(.native-select)');
   selects.forEach(select => {
     if (select.closest('.custom-select-wrapper')) return;
 
@@ -331,7 +331,7 @@ function adminLayout(content, activeNav) {
       <aside class="sidebar" id="adminSidebar">
         <div class="sidebar-header">
           <div class="logo">
-            <i class="fas fa-globe-asia"></i>
+            <i class="fas fa-graduation-cap"></i>
           </div>
           <h2>${escapeHtml(adminName)}</h2>
           <p>${escapeHtml(adminRole)}</p>
@@ -501,11 +501,12 @@ router.on('/admin/dashboard', async () => {
       : platformLabel;
     document.title = `لوحة المعلومات - ${platformFullTitle}`;
 
-    const [classes, units, lessons] = await Promise.all([
+    const [classes, units] = await Promise.all([
       adminApi.get('/api/classes'),
-      adminApi.get('/api/units'),
-      adminApi.get('/api/lessons')
+      adminApi.get('/api/units')
     ]);
+    const term1Units = units.filter(u => u.term == '1' || u.term == 1).length;
+    const term2Units = units.filter(u => u.term == '2' || u.term == 2).length;
 
     app.innerHTML = adminLayout(`
       <div class="admin-header">
@@ -513,18 +514,22 @@ router.on('/admin/dashboard', async () => {
         <p>نظرة عامة على المحتوى التعليمي</p>
       </div>
       <div class="admin-content">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>الصفوف الدراسية</h3>
-            <div class="number">${classes.length}</div>
-          </div>
-          <div class="stat-card">
-            <h3>الوحدات الدراسية</h3>
+        <div class="stats-grid stats-grid-compact">
+          <div class="stat-card stat-card-compact">
+            <h3>إجمالي الوحدات</h3>
             <div class="number">${units.length}</div>
           </div>
-          <div class="stat-card">
-            <h3>الدروس</h3>
-            <div class="number">${lessons.length}</div>
+          <div class="stat-card stat-card-compact">
+            <h3>إجمالي الصفوف</h3>
+            <div class="number">${classes.length}</div>
+          </div>
+          <div class="stat-card stat-card-compact">
+            <h3>وحدات الفصل الأول</h3>
+            <div class="number">${term1Units}</div>
+          </div>
+          <div class="stat-card stat-card-compact">
+            <h3>وحدات الفصل الثاني</h3>
+            <div class="number">${term2Units}</div>
           </div>
         </div>
         <div class="quick-actions">
@@ -882,49 +887,43 @@ router.on('/admin/units', async () => {
     ]);
     window.availableClasses = classes;
 
-    // Calculate stats
+    // Calculate stats (match dashboard: units + classes + terms)
     const totalUnits = allUnits.length;
     const term1Count = allUnits.filter(u => u.term == '1' || u.term == 1).length;
     const term2Count = allUnits.filter(u => u.term == '2' || u.term == 2).length;
-    const totalLessons = lessons.length;
 
     // Build class filter options
     const classOptions = classes.map(c =>
       `<option value="${c.id}">${escapeHtml(c.name || c.name_ar)}</option>`
     ).join('');
 
-    // Render unit row
+    // Render unit row (data-* for delegated Edit/Delete to avoid escaping issues)
     const renderUnitRow = (unit, cls) => {
       const termNum = unit.term || '1';
       const unitLessons = lessons.filter(l => l.unit_id == unit.id);
+      const titleAttr = escapeHtml(unit.title || unit.title_ar).replace(/"/g, '&quot;');
       return `
         <tr class="units-table-row" data-id="${unit.id}" data-class-id="${cls.id}" data-term="${termNum}" data-title="${escapeHtml(unit.title || unit.title_ar).toLowerCase()}">
-          <td style="padding: 1rem;">
+          <td style="padding: 0.75rem 1rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <i class="fas fa-grip-vertical" style="color: #cbd5e1; cursor: grab;" title="اسحب للترتيب"></i>
-              <span style="font-weight: 700; color: var(--text-color); font-size: 1.05rem;">${escapeHtml(unit.title || unit.title_ar)}</span>
+              <i class="fas fa-grip-vertical" style="color: var(--text-light); cursor: grab;" title="اسحب للترتيب"></i>
+              <span style="font-weight: 700; color: var(--text-main); font-size: 1rem;">${escapeHtml(unit.title || unit.title_ar)}</span>
             </div>
           </td>
-          <td style="padding: 1rem;">
-            <span style="background: ${termNum == '1' ? '#f0fdf4' : '#fdf2f8'}; color: ${termNum == '1' ? '#15803d' : '#be185d'}; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid ${termNum == '1' ? '#bbf7d0' : '#fbcfe8'};">
-              الفصل ${termNum == '1' ? 'الأول' : 'الثاني'}
-            </span>
+          <td style="padding: 0.75rem 1rem;">
+            <span class="unit-term-badge unit-term-${termNum}">الفصل ${termNum == '1' ? 'الأول' : 'الثاني'}</span>
           </td>
-          <td style="text-align: center; padding: 1rem;">
-            <a href="javascript:void(0)" onclick="window.router.navigate('/admin/lessons?unitId=${unit.id}')" style="text-decoration: none; color: inherit;">
-              <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.4rem 0.8rem; border-radius: 8px; transition: all 0.2s; border: 1px solid #e2e8f0;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                <i class="fas fa-Layer-group" style="color: #64748b;"></i>
-                <span style="font-weight: 700;">${unitLessons.length}</span>
-                <span style="font-size: 0.8rem; color: #64748b;">دروس</span>
-              </div>
+          <td style="text-align: center; padding: 0.75rem 1rem;">
+            <a href="/admin/lessons?unitId=${unit.id}" class="unit-lessons-link" data-navigate="true">
+              <span class="unit-lessons-count">${unitLessons.length} دروس</span>
             </a>
           </td>
-          <td style="padding: 1rem;">
-            <div style="display: flex; gap: 0.5rem;">
-              <button type="button" class="btn btn-primary" onclick="editUnit(${unit.id}, '${escapeHtml(unit.title || unit.title_ar).replace(/'/g, "\\'")}', ${unit.class_id}, '${unit.category || 'P'}', '${termNum}')" title="تعديل">
+          <td style="padding: 0.75rem 1rem;">
+            <div class="table-actions">
+              <button type="button" class="btn btn-primary btn-sm" data-action="edit-unit" data-id="${unit.id}" data-title="${titleAttr}" data-class-id="${unit.class_id}" data-category="${unit.category || 'P'}" data-term="${termNum}" title="تعديل">
                 <i class="fas fa-edit"></i> تعديل
               </button>
-              <button type="button" class="btn btn-sm btn-danger" onclick="deleteUnit(${unit.id}, '${escapeHtml(unit.title || unit.title_ar).replace(/'/g, "\\'")}')" title="حذف">
+              <button type="button" class="btn btn-sm btn-danger" data-action="delete-unit" data-id="${unit.id}" data-title="${titleAttr}" title="حذف">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -944,30 +943,19 @@ router.on('/admin/units', async () => {
         if (classUnits.length === 0) return '';
 
         return `
-          <div class="units-class-section" data-class-id="${cls.id}" style="margin-bottom: 2.5rem; background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: var(--shadow);">
-            <div style="background: var(--gradient-primary); color: white; padding: 1.25rem 1.75rem; display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                  <i class="fas fa-graduation-cap" style="font-size: 1.25rem;"></i>
-                </div>
-                <div>
-                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em;">${escapeHtml(cls.name || cls.name_ar)}</h3>
-                </div>
-              </div>
-              <div style="display: flex; gap: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.5rem 1.25rem; border-radius: 12px; font-weight: 700; font-size: 0.9rem; backdrop-filter: blur(4px);">
-                <span><i class="fas fa-folder" style="margin-left: 0.4rem;"></i> ${classUnits.length} وحدة</span>
-                <span style="opacity: 0.5;">|</span>
-                <span><i class="fas fa-file-alt" style="margin-left: 0.4rem;"></i> ${lessons.filter(l => classUnits.some(u => u.id == l.unit_id)).length} درس</span>
-              </div>
+          <div class="units-class-section" data-class-id="${cls.id}">
+            <div class="units-class-section-header">
+              <h3>${escapeHtml(cls.name || cls.name_ar)}</h3>
+              <span class="units-class-meta">${classUnits.length} وحدة · ${lessons.filter(l => classUnits.some(u => u.id == l.unit_id)).length} درس</span>
             </div>
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
+            <div class="units-table-wrap">
+              <table class="units-table">
                 <thead>
-                  <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <th style="padding: 1rem; text-align: right; width: 40%; color: #64748b; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">عنوان الوحدة</th>
-                    <th style="padding: 1rem; text-align: right; color: #64748b; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">الفصل</th>
-                    <th style="padding: 1rem; text-align: center; color: #64748b; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">محتويات</th>
-                    <th style="padding: 1rem; text-align: right; color: #64748b; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">تحكم</th>
+                  <tr>
+                    <th>عنوان الوحدة</th>
+                    <th>الفصل</th>
+                    <th>محتويات</th>
+                    <th>تحكم</th>
                   </tr>
                 </thead>
                 <tbody class="sortable-units-body" data-class-id="${cls.id}">
@@ -984,43 +972,35 @@ router.on('/admin/units', async () => {
 
     app.innerHTML = adminLayout(`
       <div class="admin-header">
-        <div style="display: flex; align-items: center; gap: 1.25rem;">
-          <div style="width: 60px; height: 60px; background: var(--gradient-primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 20px rgba(30,58,138,0.2);">
-            <i class="fas fa-folder-tree" style="font-size: 1.75rem;"></i>
-          </div>
-          <div>
-            <h1 style="font-size: 2rem; font-weight: 900; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">إدارة الوحدات</h1>
-            <p style="color: #64748b; margin-top: 0.25rem; font-weight: 500;">مركز التحكم بالوحدات التعليمية والمناهج</p>
-          </div>
-        </div>
-        <button type="button" class="btn btn-primary" style="padding: 0.8rem 1.5rem; font-size: 1rem; border-radius: 12px; box-shadow: 0 8px 16px rgba(30,58,138,0.25);" onclick="window.showCreateUnitForm(null, null)">
+        <h1>إدارة الوحدات</h1>
+        <button type="button" class="btn btn-primary" data-action="show-create-unit">
           <i class="fas fa-plus"></i> إنشاء وحدة جديدة
         </button>
       </div>
 
       <div class="admin-content" style="max-width: 1400px; margin: 0 auto;">
-        <!-- Stats Cards Container -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-          <div class="stat-card-premium" style="border-right: 6px solid var(--primary-color);">
-            <div class="value">${totalUnits}</div>
-            <div class="label">إجمالي الوحدات</div>
+        <!-- Stats (compact, theme colors) -->
+        <div class="stats-grid stats-grid-compact" style="margin-bottom: 1.5rem;">
+          <div class="stat-card stat-card-compact">
+            <h3>إجمالي الوحدات</h3>
+            <div class="number">${totalUnits}</div>
           </div>
-          <div class="stat-card-premium" style="border-right: 6px solid #16a34a;">
-            <div class="value">${totalLessons}</div>
-            <div class="label">إجمالي الدروس</div>
+          <div class="stat-card stat-card-compact">
+            <h3>إجمالي الصفوف</h3>
+            <div class="number">${classes.length}</div>
           </div>
-          <div class="stat-card-premium" style="border-right: 6px solid #db2777;">
-            <div class="value">${term1Count}</div>
-            <div class="label">وحدات الفصل الأول</div>
+          <div class="stat-card stat-card-compact">
+            <h3>وحدات الفصل الأول</h3>
+            <div class="number">${term1Count}</div>
           </div>
-          <div class="stat-card-premium" style="border-right: 6px solid #9333ea;">
-            <div class="value">${term2Count}</div>
-            <div class="label">وحدات الفصل الثاني</div>
+          <div class="stat-card stat-card-compact">
+            <h3>وحدات الفصل الثاني</h3>
+            <div class="number">${term2Count}</div>
           </div>
         </div>
 
-        <!-- Comprehensive Filter & Search -->
-        <div style="background: white; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; border: 1px solid #e2e8f0; box-shadow: var(--shadow);">
+        <!-- Filter & Search -->
+        <div class="admin-filter-bar">
           <div class="units-search-container">
             <i class="fas fa-search"></i>
             <input type="text" id="units-search-input" class="units-search-input" placeholder="البحث في عناوين الوحدات (أدخل 3 أحرف على الأقل)..." oninput="filterUnitsDashboard()">
@@ -1413,49 +1393,29 @@ router.on('/admin/lessons', async () => {
     window.availableUnits = units;
     window.availableClasses = classes;
 
-    // Calculate stats
-    const totalLessons = lessons.length;
-    const term1Count = lessons.filter(l => l.term == '1' || l.term == 1).length;
-    const term2Count = lessons.filter(l => l.term == '2' || l.term == 2).length;
-
     // Build filter options
     const classOptions = classes.map(c => `<option value="${c.id}">${escapeHtml(c.name || c.name_ar)}</option>`).join('');
     const unitOptions = units.map(u => `<option value="${u.id}">${escapeHtml(u.title || u.title_ar)}</option>`).join('');
 
-    // Render individual lesson row
+    // Render individual lesson row (theme classes, compact)
     const renderLessonRow = (lesson) => {
       const termNum = lesson.term || '1';
       return `
         <tr class="lessons-table-row" data-id="${lesson.id}" data-class-id="${lesson.class_id}" data-unit-id="${lesson.unit_id}" data-term="${termNum}" data-title="${escapeHtml(lesson.title || lesson.title_ar).toLowerCase()}">
-          <td style="padding: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-               <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;">
-                 <i class="fas fa-file-alt" style="font-size: 0.9rem;"></i>
-               </div>
-               <span style="font-weight: 700; color: var(--text-color);">${escapeHtml(lesson.title || lesson.title_ar)}</span>
-            </div>
+          <td>
+            <span class="lesson-title-cell">${escapeHtml(lesson.title || lesson.title_ar)}</span>
           </td>
-          <td style="padding: 1rem;">
-            <span style="background: #eff6ff; color: #1e40af; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid #dbeafe;">
-              ${escapeHtml(lesson.unit_title)}
-            </span>
+          <td>
+            <span class="lesson-unit-badge">${escapeHtml(lesson.unit_title)}</span>
           </td>
-          <td style="padding: 1rem;">
-            <span style="background: ${termNum == '1' ? '#f0fdf4' : '#fdf2f8'}; color: ${termNum == '1' ? '#15803d' : '#be185d'}; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid ${termNum == '1' ? '#bbf7d0' : '#fbcfe8'};">
-              الفصل ${termNum == '1' ? 'الأول' : 'الثاني'}
-            </span>
+          <td>
+            <span class="unit-term-badge unit-term-${termNum}">الفصل ${termNum == '1' ? 'الأول' : 'الثاني'}</span>
           </td>
-          <td style="padding: 1rem;">
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button type="button" class="btn btn-sm btn-primary" data-action="edit-lesson" data-id="${lesson.id}" title="تعديل">
-                <i class="fas fa-edit"></i> تعديل
-              </button>
-              <button type="button" class="btn btn-sm btn-info" data-action="manage-questions" data-id="${lesson.id}" data-title="${escapeHtml((lesson.title || lesson.title_ar)).replace(/"/g, '&quot;')}" title="الأسئلة">
-                <i class="fas fa-question-circle"></i> الأسئلة
-              </button>
-              <button type="button" class="btn btn-sm btn-danger" data-action="delete-lesson" data-id="${lesson.id}" data-title="${escapeHtml((lesson.title || lesson.title_ar)).replace(/"/g, '&quot;')}" title="حذف">
-                <i class="fas fa-trash"></i>
-              </button>
+          <td>
+            <div class="table-actions">
+              <button type="button" class="btn btn-sm btn-primary" data-action="edit-lesson" data-id="${lesson.id}" title="تعديل"><i class="fas fa-edit"></i> تعديل</button>
+              <button type="button" class="btn btn-sm btn-info" data-action="manage-questions" data-id="${lesson.id}" data-title="${escapeHtml((lesson.title || lesson.title_ar)).replace(/"/g, '&quot;')}" title="الأسئلة"><i class="fas fa-question-circle"></i> الأسئلة</button>
+              <button type="button" class="btn btn-sm btn-danger" data-action="delete-lesson" data-id="${lesson.id}" data-title="${escapeHtml((lesson.title || lesson.title_ar)).replace(/"/g, '&quot;')}" title="حذف"><i class="fas fa-trash"></i></button>
             </div>
           </td>
         </tr>
@@ -1471,26 +1431,19 @@ router.on('/admin/lessons', async () => {
         if (classLessons.length === 0) return '';
 
         return `
-          <div class="lessons-class-section" data-class-id="${cls.id}" style="margin-bottom: 2.5rem; background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: var(--shadow);">
-            <div style="background: var(--gradient-primary); color: white; padding: 1.25rem 1.75rem; display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                  <i class="fas fa-layer-group" style="font-size: 1.25rem;"></i>
-                </div>
-                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">${escapeHtml(cls.name || cls.name_ar)}</h3>
-              </div>
-              <div style="display: flex; gap: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.5rem 1.25rem; border-radius: 12px; font-weight: 700; font-size: 0.9rem; backdrop-filter: blur(4px);">
-                <span><i class="fas fa-file-alt" style="margin-left: 0.4rem;"></i> ${classLessons.length} درس</span>
-              </div>
+          <div class="lessons-class-section" data-class-id="${cls.id}">
+            <div class="units-class-section-header">
+              <h3>${escapeHtml(cls.name || cls.name_ar)}</h3>
+              <span class="units-class-meta">${classLessons.length} درس</span>
             </div>
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+            <div class="units-table-wrap">
+              <table class="units-table lessons-table">
                 <thead>
-                  <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <th style="padding: 1rem; text-align: right; color: #64748b; font-weight: 700; font-size: 0.85rem;">عنوان الدرس</th>
-                    <th style="padding: 1rem; text-align: right; color: #64748b; font-weight: 700; font-size: 0.85rem;">الوحدة</th>
-                    <th style="padding: 1rem; text-align: right; color: #64748b; font-weight: 700; font-size: 0.85rem;">الفصل</th>
-                    <th style="padding: 1rem; text-align: left; color: #64748b; font-weight: 700; font-size: 0.85rem;">تحكم</th>
+                  <tr>
+                    <th>عنوان الدرس</th>
+                    <th>الوحدة</th>
+                    <th>الفصل</th>
+                    <th>تحكم</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1507,39 +1460,15 @@ router.on('/admin/lessons', async () => {
 
     app.innerHTML = adminLayout(`
       <div class="admin-header">
-        <div style="display: flex; align-items: center; gap: 1.25rem;">
-          <div style="width: 60px; height: 60px; background: var(--gradient-primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 20px rgba(30,58,138,0.2);">
-            <i class="fas fa-file-waveform" style="font-size: 1.75rem;"></i>
-          </div>
-          <div>
-            <h1 style="font-size: 2rem; font-weight: 900; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">إدارة الدروس</h1>
-            <p style="color: #64748b; margin-top: 0.25rem; font-weight: 500;">التحكم في المحتوى التعليمي والدروس التفاعلية</p>
-          </div>
-        </div>
-        <button type="button" class="btn btn-primary" style="padding: 0.8rem 1.5rem; font-size: 1rem; border-radius: 12px;" data-action="show-create-lesson">
+        <h1>إدارة الدروس</h1>
+        <button type="button" class="btn btn-primary" data-action="show-create-lesson">
           <i class="fas fa-plus"></i> إنشاء درس جديد
         </button>
       </div>
 
       <div class="admin-content" style="max-width: 1400px; margin: 0 auto;">
-        <!-- Stats Dashboard -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-          <div class="stat-card-premium" style="border-right: 6px solid var(--primary-color);">
-            <div class="value">${totalLessons}</div>
-            <div class="label">إجمالي الدروس</div>
-          </div>
-          <div class="stat-card-premium" style="border-right: 6px solid #16a34a;">
-            <div class="value">${term1Count}</div>
-            <div class="label">دروس الفصل الأول</div>
-          </div>
-          <div class="stat-card-premium" style="border-right: 6px solid #db2777;">
-            <div class="value">${term2Count}</div>
-            <div class="label">دروس الفصل الثاني</div>
-          </div>
-        </div>
-
         <!-- Filters -->
-        <div style="background: white; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; border: 1px solid #e2e8f0; box-shadow: var(--shadow);">
+        <div class="admin-filter-bar">
           <div class="units-search-container">
             <i class="fas fa-search"></i>
             <input type="text" id="lessons-search-input" class="units-search-input" placeholder="البحث في عناوين الدروس (3 أحرف على الأقل)..." oninput="filterLessonsDashboard()">
@@ -1633,7 +1562,7 @@ router.on('/admin/settings', async () => {
           </div>
 
           <div class="form-group">
-            <label for="platform-label"><i class="fas fa-globe-asia"></i> اسم المنصة *</label>
+            <label for="platform-label"><i class="fas fa-graduation-cap"></i> اسم المنصة *</label>
             <input type="text" id="platform-label" required value="${escapeHtml(
         identity.platformLabel || 'المنصة التعليمية'
       )}" dir="rtl" />
@@ -1780,9 +1709,26 @@ window.resetLessonsFilters = function () {
   filterLessonsDashboard();
 };
 
-window.showCreateLessonForm = function () {
-  const unitOptions = window.availableUnits.map(unit =>
-    `<option value="${unit.id}">${escapeHtml(unit.title || unit.title_ar)} (${escapeHtml(unit.class_name)})</option>`
+window.showCreateLessonForm = async function () {
+  let classes = window.availableClasses;
+  let allUnits = window.availableUnits;
+  if (!classes || !allUnits) {
+    try {
+      const [c, u] = await Promise.all([adminApi.get('/api/classes'), adminApi.get('/api/units')]);
+      classes = c;
+      allUnits = u;
+      window.availableClasses = classes;
+      window.availableUnits = allUnits;
+    } catch (e) {
+      console.error('Failed to fetch classes/units', e);
+      classes = classes || [];
+      allUnits = allUnits || [];
+    }
+  }
+  classes = classes || [];
+  allUnits = allUnits || [];
+  const classOptions = classes.map(c =>
+    `<option value="${c.id}">${escapeHtml(c.name || c.name_ar)}</option>`
   ).join('');
 
   const modal = document.createElement('div');
@@ -1795,16 +1741,30 @@ window.showCreateLessonForm = function () {
       </div>
       <form id="create-lesson-form">
         <div class="form-group">
-          <label for="lesson-title">عنوان الدرس *</label>
-          <input type="text" id="lesson-title" required autofocus placeholder="مثال: درس الفيزياء" dir="rtl">
-          <small style="color: #666;">يرجى إدخال عنوان الدرس بالأحرف العربية فقط</small>
+          <label for="lesson-term">الفصل الدراسي *</label>
+          <select id="lesson-term" required>
+            <option value="">اختر الفصل...</option>
+            <option value="1">الفصل الأول</option>
+            <option value="2">الفصل الثاني</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="lesson-class">الصف الدراسي *</label>
+          <select id="lesson-class" required>
+            <option value="">اختر الصف...</option>
+            ${classOptions}
+          </select>
         </div>
         <div class="form-group">
           <label for="lesson-unit">الوحدة الدراسية *</label>
-          <select id="lesson-unit" required>
-            <option value="">اختر وحدة دراسية...</option>
-            ${unitOptions}
+          <select id="lesson-unit" class="native-select" required>
+            <option value="">اختر الفصل والصف أولاً...</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label for="lesson-title">عنوان الدرس *</label>
+          <input type="text" id="lesson-title" required placeholder="مثال: درس الفيزياء" dir="rtl">
+          <small style="color: #666;">يرجى إدخال عنوان الدرس بالأحرف العربية فقط</small>
         </div>
         <div class="form-group">
           <label><i class="fab fa-youtube"></i> الفيديوهات (اختياري)</label>
@@ -1830,9 +1790,46 @@ window.showCreateLessonForm = function () {
   `;
   document.body.appendChild(modal);
 
+  const termSelect = document.getElementById('lesson-term');
+  const classSelect = document.getElementById('lesson-class');
+  const unitSelect = document.getElementById('lesson-unit');
   const titleInput = document.getElementById('lesson-title');
   const errorDiv = document.getElementById('lesson-error');
   const errorMsg = document.getElementById('lesson-error-msg');
+
+  // Use the units we have in this form (from fetch or page)
+  const unitsForForm = allUnits.length ? allUnits : (window.availableUnits || []);
+
+  function updateUnitOptions() {
+    const term = (termSelect && termSelect.value) || '';
+    const classId = (classSelect && classSelect.value) || '';
+    const placeholder = '<option value="">اختر وحدة دراسية...</option>';
+    unitSelect.innerHTML = placeholder;
+    if (!term || !classId) {
+      unitSelect.innerHTML = '<option value="">اختر الفصل والصف أولاً...</option>';
+      return;
+    }
+    const termStr = String(term).trim();
+    const classIdNum = Number(classId) || 0;
+    const filtered = unitsForForm.filter(u => {
+      const uTerm = String(u.term || '1').trim();
+      const uClassId = Number(u.class_id) || 0;
+      return uTerm === termStr && uClassId === classIdNum;
+    });
+    filtered.forEach(unit => {
+      const opt = document.createElement('option');
+      opt.value = unit.id;
+      opt.textContent = escapeHtml(unit.title || unit.title_ar);
+      unitSelect.appendChild(opt);
+    });
+    if (filtered.length === 0) {
+      unitSelect.innerHTML = '<option value="">لا توجد وحدات في هذا الفصل والصف</option>';
+    }
+  }
+
+  if (termSelect) termSelect.addEventListener('change', updateUnitOptions);
+  if (classSelect) classSelect.addEventListener('change', updateUnitOptions);
+  setTimeout(updateUnitOptions, 0);
 
   // Real-time Arabic validation
   titleInput.addEventListener('input', (e) => {
@@ -2026,13 +2023,24 @@ window.editLesson = async function (id) {
   try {
     const lesson = await adminApi.get(`/api/lessons/${id}`);
 
-    // Make sure availableUnits is loaded, if not fetch it
-    if (!window.availableUnits) {
-      window.availableUnits = await adminApi.get('/api/units');
+    let classes = window.availableClasses;
+    let allUnits = window.availableUnits;
+    if (!classes || !allUnits) {
+      const [c, u] = await Promise.all([adminApi.get('/api/classes'), adminApi.get('/api/units')]);
+      classes = c;
+      allUnits = u;
+      window.availableClasses = classes;
+      window.availableUnits = allUnits;
     }
+    classes = classes || [];
+    allUnits = allUnits || [];
 
-    const unitOptions = window.availableUnits.map(unit =>
-      `<option value="${unit.id}" ${unit.id === lesson.unit_id ? 'selected' : ''}>${escapeHtml(unit.title || unit.title_ar)} (${escapeHtml(unit.class_name)})</option>`
+    const currentUnit = allUnits.find(u => u.id == lesson.unit_id);
+    const preTerm = currentUnit ? String(currentUnit.term || '1').trim() : '1';
+    const preClassId = currentUnit ? String(currentUnit.class_id) : '';
+
+    const classOptions = classes.map(c =>
+      `<option value="${c.id}" ${c.id == preClassId ? 'selected' : ''}>${escapeHtml(c.name || c.name_ar)}</option>`
     ).join('');
 
     const modal = document.createElement('div');
@@ -2045,15 +2053,30 @@ window.editLesson = async function (id) {
         </div>
         <form id="edit-lesson-form">
           <div class="form-group">
-            <label for="edit-lesson-title">عنوان الدرس *</label>
-            <input type="text" id="edit-lesson-title" value="${escapeHtml(lesson.title || lesson.title_ar)}" required autofocus dir="rtl">
-            <small style="color: #666;">يرجى إدخال عنوان الدرس بالأحرف العربية فقط</small>
+            <label for="edit-lesson-term">الفصل الدراسي *</label>
+            <select id="edit-lesson-term" required>
+              <option value="">اختر الفصل...</option>
+              <option value="1" ${preTerm === '1' ? 'selected' : ''}>الفصل الأول</option>
+              <option value="2" ${preTerm === '2' ? 'selected' : ''}>الفصل الثاني</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-lesson-class">الصف الدراسي *</label>
+            <select id="edit-lesson-class" required>
+              <option value="">اختر الصف...</option>
+              ${classOptions}
+            </select>
           </div>
           <div class="form-group">
             <label for="edit-lesson-unit">الوحدة الدراسية *</label>
-            <select id="edit-lesson-unit" required>
-              ${unitOptions}
+            <select id="edit-lesson-unit" class="native-select" required>
+              <option value="">اختر الفصل والصف أولاً...</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-lesson-title">عنوان الدرس *</label>
+            <input type="text" id="edit-lesson-title" value="${escapeHtml(lesson.title || lesson.title_ar)}" required dir="rtl">
+            <small style="color: #666;">يرجى إدخال عنوان الدرس بالأحرف العربية فقط</small>
           </div>
           <div class="form-group">
             <label><i class="fab fa-youtube"></i> الفيديوهات (اختياري)</label>
@@ -2079,9 +2102,45 @@ window.editLesson = async function (id) {
     `;
     document.body.appendChild(modal);
 
+    const termSelect = document.getElementById('edit-lesson-term');
+    const classSelect = document.getElementById('edit-lesson-class');
+    const unitSelect = document.getElementById('edit-lesson-unit');
     const titleInput = document.getElementById('edit-lesson-title');
     const errorDiv = document.getElementById('edit-lesson-error');
     const errorMsg = document.getElementById('edit-lesson-error-msg');
+
+    const unitsForForm = allUnits;
+
+    function updateEditUnitOptions() {
+      const term = (termSelect && termSelect.value) || '';
+      const classId = (classSelect && classSelect.value) || '';
+      unitSelect.innerHTML = '<option value="">اختر وحدة دراسية...</option>';
+      if (!term || !classId) {
+        unitSelect.innerHTML = '<option value="">اختر الفصل والصف أولاً...</option>';
+        return;
+      }
+      const termStr = String(term).trim();
+      const classIdNum = Number(classId) || 0;
+      const filtered = unitsForForm.filter(u => {
+        const uTerm = String(u.term || '1').trim();
+        const uClassId = Number(u.class_id) || 0;
+        return uTerm === termStr && uClassId === classIdNum;
+      });
+      filtered.forEach(unit => {
+        const opt = document.createElement('option');
+        opt.value = unit.id;
+        opt.textContent = escapeHtml(unit.title || unit.title_ar);
+        if (unit.id == lesson.unit_id) opt.selected = true;
+        unitSelect.appendChild(opt);
+      });
+      if (filtered.length === 0) {
+        unitSelect.innerHTML = '<option value="">لا توجد وحدات في هذا الفصل والصف</option>';
+      }
+    }
+
+    if (termSelect) termSelect.addEventListener('change', updateEditUnitOptions);
+    if (classSelect) classSelect.addEventListener('change', updateEditUnitOptions);
+    setTimeout(updateEditUnitOptions, 0);
 
     // Real-time Arabic validation
     titleInput.addEventListener('input', (e) => {
@@ -2674,7 +2733,8 @@ document.addEventListener('click', (e) => {
     const title = el.getAttribute('data-title') || '';
     const classId = el.getAttribute('data-class-id');
     const category = el.getAttribute('data-category') || 'P';
-    if (id && classId) editUnit(parseInt(id, 10), title, parseInt(classId, 10), category);
+    const term = el.getAttribute('data-term') || '1';
+    if (id && classId) editUnit(parseInt(id, 10), title, parseInt(classId, 10), category, term);
     return;
   }
   if (action === 'delete-unit') {

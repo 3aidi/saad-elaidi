@@ -16,7 +16,7 @@ const db = require('./src/database/database');
 const initializeDatabase = require('./src/database/initDatabase');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
 // ==================== SECURITY VALIDATION ====================
@@ -142,7 +142,7 @@ setTimeout(ensureTablesExist, 1000);
 
 // CORS Configuration (for production when frontend/backend are separate)
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || `http://localhost:${PORT}`,
   credentials: true, // Allow cookies
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
