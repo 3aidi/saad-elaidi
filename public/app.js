@@ -80,9 +80,9 @@ class AppRouter {
 }
 
 const api = {
-  async get(url) {
+  async get(url, options = {}) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, options);
       if (!res.ok) throw new Error('فشل في جلب البيانات');
       return await res.json();
     } catch (e) {
@@ -91,6 +91,66 @@ const api = {
     }
   }
 };
+
+/**
+ * Identity / School Settings
+ * Single source of truth from backend (/api/settings/identity)
+ */
+async function loadIdentity() {
+  const fallback =
+    (window.APP_CONFIG && window.APP_CONFIG.IDENTITY) || {};
+
+  try {
+    const identity = await api.get('/api/settings/identity', {
+      cache: 'no-store'
+    });
+    window.APP_IDENTITY = identity || fallback;
+  } catch (_) {
+    window.APP_IDENTITY = fallback;
+  }
+
+  const identity = window.APP_IDENTITY || fallback;
+
+  // Apply to document title
+  if (identity.platformLabel || identity.schoolName) {
+    const baseTitle = identity.platformLabel || fallback.platformLabel || 'المنصة التعليمية';
+    const school = identity.schoolName || fallback.schoolName || '';
+    document.title = school ? `${baseTitle} - ${school}` : baseTitle;
+  }
+
+  // Apply to sidebar labels
+  document
+    .querySelectorAll('[data-identity="platform-label"]')
+    .forEach((el) => {
+      el.textContent = identity.platformLabel || fallback.platformLabel || el.textContent;
+    });
+
+  document
+    .querySelectorAll('[data-identity="school-name"]')
+    .forEach((el) => {
+      el.textContent = identity.schoolName || fallback.schoolName || el.textContent;
+    });
+}
+
+/**
+ * Build embeddable PPTX viewer URL from a sharing link
+ * Priority:
+ * 1. Native provider preview (Google Drive / OneDrive)
+ * 2. Office Online Viewer fallback
+ */
+function buildPptxEmbedUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const url = rawUrl.trim();
+  if (!/^https?:\/\//i.test(url)) return null;
+
+  try {
+    // For OneDrive (and any valid PPTX URL) use Office Online Viewer
+    const encodedSrc = encodeURIComponent(url);
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedSrc}`;
+  } catch (_) {
+    return null;
+  }
+}
 
 /** Fetch dashboard data (classes + units). Fallback: if dashboard-data fails, use classes only. */
 async function getDashboardData() {
@@ -360,8 +420,34 @@ router.on('/lesson/:id', async (lessonId) => {
 
     const lesson = await api.get(`/api/lessons/${lessonId}`);
 
-    // Process Images and Videos
+    // Process PPTX, Videos and Images
     let mediaHTML = '';
+
+    // Interactive PowerPoint viewer
+    if (lesson.pptx_url) {
+      const embedUrl = buildPptxEmbedUrl(lesson.pptx_url);
+      if (embedUrl) {
+        mediaHTML += `
+          <div style="margin: 2rem 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); background:#fff;">
+            <iframe src="${embedUrl}"
+                    width="100%"
+                    height="600"
+                    frameborder="0"
+                    allowfullscreen
+                    style="border:0;"></iframe>
+          </div>
+        `;
+      } else {
+        mediaHTML += `
+          <div style="margin: 2rem 0; padding:1.25rem; border-radius: var(--radius-md); border:1px solid var(--border-light); background:#fff;">
+            <p style="margin:0; color:var(--text-muted); font-weight:600;">
+              The PPTX cannot be previewed. Please check the OneDrive link.
+            </p>
+          </div>
+        `;
+      }
+    }
+
     if (lesson.videos?.length) {
       mediaHTML += lesson.videos.map(v => {
         const vidId = extractYouTubeId(v.video_url);
@@ -409,7 +495,8 @@ router.on('/lesson/:id', async (lessonId) => {
 });
 
 // Start the APP
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadIdentity();
   setupSidebar();
   router.handleRoute();
 });

@@ -103,7 +103,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // ADMIN: Create lesson
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { title, unit_id, content, videos, images } = req.body;
+    const { title, unit_id, content, videos, images, pptxUrl } = req.body;
 
     if (!title || title.trim() === '') {
       return res.status(400).json({
@@ -151,8 +151,8 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     const result = await db.run(
-      'INSERT INTO lessons (title, unit_id, content) VALUES (?, ?, ?)',
-      [trimmed, unit_idNum, content || '']
+      'INSERT INTO lessons (title, unit_id, content, pptx_url) VALUES (?, ?, ?, ?)',
+      [trimmed, unit_idNum, content || '', pptxUrl || null]
     );
 
     // Insert videos if provided
@@ -201,7 +201,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid lesson id' });
     }
     const id = idParsed.value;
-    const { title, unit_id, content, videos, images } = req.body;
+    const { title, unit_id, content, videos, images, pptxUrl } = req.body;
     const unitIdParsed = parsePositiveInteger(unit_id);
     if (!unitIdParsed.valid) {
       return res.status(400).json({ error: 'الوحدة الدراسية مطلوبة', code: 'UNIT_ID_REQUIRED' });
@@ -245,11 +245,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
       });
     }
 
+    // Preserve existing PPTX unless a new one is provided
+    const existingRow = await db.get('SELECT pptx_url FROM lessons WHERE id = ?', [id]);
+    const existingPptxUrl = existingRow ? existingRow.pptx_url : null;
+    const newPptxUrl =
+      typeof pptxUrl === 'string' && pptxUrl.trim()
+        ? pptxUrl.trim()
+        : existingPptxUrl;
+
     let result;
     try {
       result = await db.run(
-        'UPDATE lessons SET title = ?, unit_id = ?, content = ? WHERE id = ?',
-        [trimmedTitle, unit_idNum, content || '', id]
+        'UPDATE lessons SET title = ?, unit_id = ?, content = ?, pptx_url = ? WHERE id = ?',
+        [trimmedTitle, unit_idNum, content || '', newPptxUrl || null, id]
       );
     } catch (updateError) {
       console.error('[ERROR] Lesson update failed:', updateError.message);

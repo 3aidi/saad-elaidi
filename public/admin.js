@@ -1778,6 +1778,13 @@ window.showCreateLessonForm = async function () {
           <button type="button" class="btn btn-secondary btn-sm" data-action="add-image-field">+ إضافة صورة</button>
           <small style="color: #64748b; display: block; margin-top: 0.5rem;">رفع صور من جهازك مع نص توضيحي لكل صورة</small>
         </div>
+        <div class="form-group">
+          <label for="lesson-pptx-url"><i class="fas fa-file-powerpoint"></i> رابط عرض PowerPoint (اختياري)</label>
+          <input type="url" id="lesson-pptx-url" placeholder="رابط من Google Drive أو OneDrive أو Dropbox..." dir="ltr" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <small style="color: #64748b; display: block; margin-top: 0.5rem;">
+            أدخل رابط مشاركة لملف PowerPoint من Google Drive أو OneDrive أو Dropbox. سيتم فتح العرض مباشرة داخل صفحة الدرس.
+          </small>
+        </div>
         <div style="color: #ef4444; margin: 1rem 0; padding: 0.75rem; background: #fee2e2; border-radius: 4px; display: none;" id="lesson-error">
           <i class="fas fa-exclamation-circle"></i> <span id="lesson-error-msg"></span>
         </div>
@@ -1852,6 +1859,8 @@ window.showCreateLessonForm = async function () {
 
     const title = titleInput.value.trim();
     const unitId = document.getElementById('lesson-unit').value;
+    const pptxUrlInput = document.getElementById('lesson-pptx-url');
+    const pptxUrl = pptxUrlInput ? pptxUrlInput.value.trim() : '';
 
     if (!title) {
       errorDiv.style.display = 'block';
@@ -1861,6 +1870,12 @@ window.showCreateLessonForm = async function () {
     if (!unitId) {
       errorDiv.style.display = 'block';
       errorMsg.textContent = 'الوحدة الدراسية مطلوبة';
+      return;
+    }
+    // Optional PPTX URL validation
+    if (pptxUrl && !/^https?:\/\/.+/i.test(pptxUrl)) {
+      errorDiv.style.display = 'block';
+      errorMsg.textContent = 'رابط PowerPoint غير صالح. يرجى إدخال رابط OneDrive صحيح.';
       return;
     }
 
@@ -1907,7 +1922,8 @@ window.showCreateLessonForm = async function () {
         unit_id: unitId,
         content: '',
         videos: videos,
-        images: images
+        images: images,
+        pptxUrl: pptxUrl || null
       });
       modal.remove();
       router.navigate('/admin/lessons');
@@ -2019,6 +2035,8 @@ window.uploadImage = async function (input, event) {
   }
 };
 
+// (PPTX upload removed) - we now accept only external PPTX URLs in the form
+
 window.editLesson = async function (id) {
   try {
     const lesson = await adminApi.get(`/api/lessons/${id}`);
@@ -2084,12 +2102,19 @@ window.editLesson = async function (id) {
             <button type="button" class="btn btn-secondary btn-sm" data-action="add-edit-video-field">+ إضافة فيديو</button>
             <small style="color: #64748b; display: block; margin-top: 0.5rem;">أضف فيديو واحد أو أكثر مع شرح منفصل لكل واحد</small>
           </div>
-          <div class="form-group">
-            <label><i class="fas fa-image"></i> الصور (اختياري)</label>
-            <div id="edit-images-container"></div>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="add-edit-image-field">+ إضافة صورة</button>
-            <small style="color: #64748b; display: block; margin-top: 0.5rem;">رفع صور من جهازك مع نص توضيحي لكل صورة</small>
-          </div>
+        <div class="form-group">
+          <label><i class="fas fa-image"></i> الصور (اختياري)</label>
+          <div id="edit-images-container"></div>
+          <button type="button" class="btn btn-secondary btn-sm" data-action="add-edit-image-field">+ إضافة صورة</button>
+          <small style="color: #64748b; display: block; margin-top: 0.5rem;">رفع صور من جهازك مع نص توضيحي لكل صورة</small>
+        </div>
+        <div class="form-group">
+          <label for="edit-lesson-pptx-url"><i class="fas fa-file-powerpoint"></i> رابط عرض PowerPoint (اختياري)</label>
+          <input type="url" id="edit-lesson-pptx-url" value="${lesson.pptx_url || ''}" placeholder="رابط من Google Drive أو OneDrive أو Dropbox..." dir="ltr" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
+          <small style="color: #64748b; display: block; margin-top: 0.5rem;">
+            أدخل أو عدّل رابط مشاركة PowerPoint ليتم عرضه مباشرة داخل صفحة الدرس.
+          </small>
+        </div>
           <div style="color: #ef4444; margin: 1rem 0; padding: 0.75rem; background: #fee2e2; border-radius: 4px; display: none;" id="edit-lesson-error">
             <i class="fas fa-exclamation-circle"></i> <span id="edit-lesson-error-msg"></span>
           </div>
@@ -2108,6 +2133,7 @@ window.editLesson = async function (id) {
     const titleInput = document.getElementById('edit-lesson-title');
     const errorDiv = document.getElementById('edit-lesson-error');
     const errorMsg = document.getElementById('edit-lesson-error-msg');
+    const pptxHiddenInput = document.getElementById('edit-lesson-pptx-url');
 
     const unitsForForm = allUnits;
 
@@ -2175,6 +2201,7 @@ window.editLesson = async function (id) {
 
       const title = titleInput.value.trim();
       const unitId = document.getElementById('edit-lesson-unit').value;
+      const pptxUrl = pptxHiddenInput ? pptxHiddenInput.value.trim() : '';
 
       if (!title) {
         errorDiv.style.display = 'block';
@@ -2184,6 +2211,11 @@ window.editLesson = async function (id) {
       if (!unitId) {
         errorDiv.style.display = 'block';
         errorMsg.textContent = 'الوحدة الدراسية مطلوبة';
+        return;
+      }
+      if (pptxUrl && !/^https?:\/\/.+/i.test(pptxUrl)) {
+        errorDiv.style.display = 'block';
+        errorMsg.textContent = 'رابط PowerPoint غير صالح. يرجى إدخال رابط OneDrive صحيح.';
         return;
       }
 
@@ -2231,7 +2263,8 @@ window.editLesson = async function (id) {
           unit_id: unitId,
           content: '',
           videos: videos,
-          images: images
+          images: images,
+          pptxUrl: pptxUrl || null
         });
         modal.remove();
         router.navigate('/admin/lessons');

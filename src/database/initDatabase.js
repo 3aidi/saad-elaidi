@@ -160,6 +160,7 @@ async function initializeDatabase() {
         await safeAlter('ALTER TABLE units ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0', 'display_order to units');
         await safeAlter("ALTER TABLE units ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'P'", 'category to units');
         await safeAlter("ALTER TABLE units ADD COLUMN IF NOT EXISTS term TEXT DEFAULT '1'", 'term to units');
+        await safeAlter('ALTER TABLE lessons ADD COLUMN IF NOT EXISTS pptx_url TEXT', 'pptx_url to lessons');
       } else {
         // SQLite: Try adding columns, ignore if they exist
         const safeAlter = async (sql) => {
@@ -169,6 +170,7 @@ async function initializeDatabase() {
         await safeAlter('ALTER TABLE units ADD COLUMN display_order INTEGER DEFAULT 0');
         await safeAlter("ALTER TABLE units ADD COLUMN category TEXT DEFAULT 'P'");
         await safeAlter("ALTER TABLE units ADD COLUMN term TEXT DEFAULT '1'");
+         await safeAlter('ALTER TABLE lessons ADD COLUMN pptx_url TEXT');
       }
       console.log('✓ Schema migration verified');
     } catch (err) {
