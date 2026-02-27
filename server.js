@@ -12,6 +12,7 @@ const classRoutes = require('./src/routes/classRoutes');
 const unitRoutes = require('./src/routes/unitRoutes');
 const lessonRoutes = require('./src/routes/lessonRoutes');
 const settingsRoutes = require('./src/routes/settingsRoutes');
+const searchRoutes = require('./src/routes/searchRoutes');
 const db = require('./src/database/database');
 const initializeDatabase = require('./src/database/initDatabase');
 
@@ -229,6 +230,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/search', searchRoutes);
 
 // Unmatched API paths must return 404 JSON, not HTML
 app.use('/api', (req, res, next) => {

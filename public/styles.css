@@ -167,6 +167,34 @@ h4 {
   text-decoration: none;
 }
 
+.sidebar-help-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-help-actions .sidebar-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+}
+
+.sidebar-help-actions .sidebar-help-link i {
+  font-size: 0.9rem;
+}
+
+.sidebar-help-actions .sidebar-help-whatsapp {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.sidebar-help-actions .sidebar-help-whatsapp i {
+  color: #16a34a;
+}
+
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -286,6 +314,163 @@ h4 {
   width: 100%;
 }
 
+/* Student global search */
+.student-global-search {
+  margin: 2rem auto 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  max-width: 900px;
+  width: 100%;
+}
+
+.student-search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.student-search-input-wrapper i {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+}
+
+.student-search-input-wrapper input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  padding-right: 2.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-height: 48px;
+}
+
+.student-search-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+}
+
+.student-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.student-filters-label {
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.filter-chip {
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  background: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+
+.filter-chip.active {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+}
+
+.filter-chip-reset {
+  background: #f1f5f9;
+}
+
+.student-search-results {
+  position: relative;
+  width: 100%;
+}
+
+.student-search-results.open {
+  margin-top: 0.25rem;
+}
+
+.student-search-results .search-loading,
+.student-search-results .search-error,
+.student-search-results .search-empty {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+.student-search-results .search-loading i {
+  margin-left: 0.5rem;
+  color: var(--primary-color);
+}
+
+.search-result-item {
+  width: 100%;
+  text-align: right;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease-out);
+}
+
+.search-result-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.search-result-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.search-result-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.search-result-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.search-result-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--primary-color);
+}
+
 /* Dashboard Cards - Premium Look */
 .cards-grid {
   display: grid;
@@ -375,6 +560,113 @@ h4 {
 .premium-card:hover .btn-arrow {
   background: var(--primary-color);
   color: white;
+}
+
+/* Dashboard sections */
+.dashboard-section {
+  margin-bottom: 3rem;
+}
+
+.dashboard-welcome {
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-welcome-main {
+  text-align: center;
+}
+
+.dashboard-student-name {
+  color: var(--primary-color);
+}
+
+.dashboard-welcome-stats {
+  margin-top: 2rem;
+}
+
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-stat-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.dashboard-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.dashboard-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.dashboard-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-section-header h2 {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-section-header h2 i {
+  color: var(--primary-color);
+}
+
+.dashboard-section-header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.dashboard-continue-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.dashboard-continue-card .btn-arrow {
+  display: none;
+}
+
+.dashboard-continue-footer {
+  justify-content: center;
+}
+
+.dashboard-progress-row {
+  margin-top: 1rem;
+}
+
+.dashboard-progress-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.dashboard-progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.dashboard-progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: inherit;
+}
+
+.dashboard-empty-card {
+  text-align: right;
 }
 
 /* Term Organization (Tabs) */
@@ -603,5 +895,10 @@ h4 {
 
   .reader-container {
     padding: 1.5rem;
+  }
+
+  /* Leave room for fixed mobile nav so last cards are fully visible */
+  .main-content {
+    padding-bottom: 5rem;
   }
 }

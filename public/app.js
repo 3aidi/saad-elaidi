@@ -167,6 +167,29 @@ const router = new AppRouter();
 const app = document.getElementById('app');
 
 /**
+ * Shared renderer for class cards (student views)
+ */
+function renderClassCards(classes, units) {
+  return classes.map((cls) => {
+    const classUnitsCount = units.filter((u) => u.class_id === cls.id).length;
+    return `
+        <div class="premium-card animate-up" data-navigate="/class/${cls.id}">
+          <div class="card-icon"><i class="fas fa-book-bookmark"></i></div>
+          <h3 class="card-title">${escapeHtml(cls.name)}</h3>
+          <p class="card-desc">استعرض جميع الوحدات والدروس المتاحة لهذا الصف الدراسي بترتيب منظم.</p>
+          <div class="card-footer">
+            <div class="card-stat">
+              <i class="fas fa-layer-group"></i>
+              <span>${classUnitsCount} وحدات</span>
+            </div>
+            <div class="btn-arrow"><i class="fas fa-arrow-left"></i></div>
+          </div>
+        </div>
+      `;
+  }).join('');
+}
+
+/**
  * SIDEBAR LOGIC
  */
 const setupSidebar = () => {
@@ -207,57 +230,22 @@ router.on('/', async () => {
 
     const { classes, units } = await getDashboardData();
 
-    const stats = {
-      totalClasses: classes.length,
-      totalUnits: units.length,
-    };
-
-    let classesHTML = classes.slice(0, 6).map(cls => {
-      const classUnitsCount = units.filter(u => u.class_id === cls.id).length;
-      return `
-        <div class="premium-card animate-up" data-navigate="/class/${cls.id}">
-          <div class="card-icon"><i class="fas fa-book-bookmark"></i></div>
-          <h3 class="card-title">${escapeHtml(cls.name)}</h3>
-          <p class="card-desc">استعرض جميع الوحدات والدروس المتاحة لهذا الصف الدراسي بترتيب منظم.</p>
-          <div class="card-footer">
-            <div class="card-stat">
-              <i class="fas fa-layer-group"></i>
-              <span>${classUnitsCount} وحدات</span>
-            </div>
-            <div class="btn-arrow"><i class="fas fa-arrow-left"></i></div>
+    if (window.StudentDashboard && typeof window.StudentDashboard.render === 'function') {
+      window.StudentDashboard.render(app, { classes, units });
+    } else {
+      const classesHTML = renderClassCards(classes, units.slice(0, 6));
+      app.innerHTML = `
+        <div class="dashboard">
+          <div class="animate-up">
+            <h1 class="page-title">مرحباً بك في رحلتك التعليمية</h1>
+            <p class="page-subtitle">اختر صفك الدراسي وابدأ في استكشاف دروسك اليوم بتجربة ممتعة وسهلة.</p>
+          </div>
+          <div class="cards-grid">
+            ${classesHTML || '<p>لا توجد صفوف مضافة حالياً.</p>'}
           </div>
         </div>
       `;
-    }).join('');
-
-    app.innerHTML = `
-      <div class="dashboard">
-        <div class="animate-up">
-          <h1 class="page-title">مرحباً بك في رحلتك التعليمية</h1>
-          <p class="page-subtitle">اختر صفك الدراسي وابدأ في استكشاف دروسك اليوم بتجربة ممتعة وسهلة.</p>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 4rem;">
-          <div class="premium-card animate-up" style="background: linear-gradient(135deg, white, #f0f9ff); border: none; box-shadow: var(--glass-shadow);">
-            <p style="font-size: 0.85rem; color: var(--text-light); font-weight: 800;">الصفوف المتاحة</p>
-            <h2 style="font-size: 2.5rem; color: var(--primary-color);">${stats.totalClasses}</h2>
-          </div>
-          <div class="premium-card animate-up" style="background: linear-gradient(135deg, white, #f0fdfa); border: none; box-shadow: var(--glass-shadow);">
-            <p style="font-size: 0.85rem; color: var(--text-light); font-weight: 800;">إجمالي الوحدات</p>
-            <h2 style="font-size: 2.5rem; color: var(--secondary-color);">${stats.totalUnits}</h2>
-          </div>
-        </div>
-
-        <h2 class="animate-up" style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
-          <i class="fas fa-stars" style="color: var(--accent-gold);"></i>
-          الصفوف الدراسية
-        </h2>
-        
-        <div class="cards-grid">
-          ${classesHTML || '<p>لا توجد صفوف مضافة حالياً.</p>'}
-        </div>
-      </div>
-    `;
+    }
   } catch (e) {
     router.renderError(e.message);
   }
@@ -270,23 +258,7 @@ router.on('/classes', async () => {
 
     const { classes, units } = await getDashboardData();
 
-    const classesHTML = classes.map(cls => {
-      const classUnitsCount = units.filter(u => u.class_id === cls.id).length;
-      return `
-        <div class="premium-card animate-up" data-navigate="/class/${cls.id}">
-          <div class="card-icon"><i class="fas fa-book-bookmark"></i></div>
-          <h3 class="card-title">${escapeHtml(cls.name)}</h3>
-          <p class="card-desc">استعرض جميع الوحدات والدروس المتاحة لهذا الصف الدراسي بترتيب منظم.</p>
-          <div class="card-footer">
-            <div class="card-stat">
-              <i class="fas fa-layer-group"></i>
-              <span>${classUnitsCount} وحدات</span>
-            </div>
-            <div class="btn-arrow"><i class="fas fa-arrow-left"></i></div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    const classesHTML = renderClassCards(classes, units);
 
     app.innerHTML = `
       <div class="class-hub">
@@ -314,6 +286,10 @@ router.on('/class/:id', async (classId) => {
       api.get(`/api/units/class/${classId}`)
     ]);
 
+    if (window.StudentActivity && typeof window.StudentActivity.recordClassVisit === 'function') {
+      window.StudentActivity.recordClassVisit(classId);
+    }
+
     const term1 = units.filter(u => u.term === '1');
     const term2 = units.filter(u => u.term === '2');
 
@@ -325,7 +301,7 @@ router.on('/class/:id', async (classId) => {
           <div class="unit-info">
             <h3 class="unit-title">${escapeHtml(u.title)}</h3>
             <div class="unit-meta">
-              <span><i class="fas fa-file-lines"></i> ${u.category === 'Z' ? 'وحدة زوايا' : 'وحدة أساسية'}</span>
+              <span><i class="fas fa-file-lines"></i> وحدة دراسية</span>
             </div>
           </div>
           <div class="btn-arrow"><i class="fas fa-chevron-left"></i></div>
@@ -336,7 +312,7 @@ router.on('/class/:id', async (classId) => {
     app.innerHTML = `
       <div class="class-hub">
         <div class="animate-up">
-           <button class="nav-item" style="border:none; background:none; cursor:pointer; padding:0; margin-bottom:1rem;" data-navigate="/classes">
+           <button class="nav-item" style="border:none; background:none; cursor:pointer; padding:0; margin-bottom:1rem;" data-navigate="/">
               <i class="fas fa-arrow-right"></i> كل الصفوف
            </button>
            <h1 class="page-title">${escapeHtml(cls.name)}</h1>
@@ -383,6 +359,10 @@ router.on('/unit/:id', async (unitId) => {
       api.get(`/api/lessons/unit/${unitId}`)
     ]);
 
+    if (window.StudentActivity && typeof window.StudentActivity.recordUnitVisit === 'function') {
+      window.StudentActivity.recordUnitVisit(unit.id, unit.class_id);
+    }
+
     const lessonsHTML = lessons.map((l, i) => `
       <div class="premium-card animate-up" data-navigate="/lesson/${l.id}" style="animation-delay: ${i * 0.1}s">
         <div class="lesson-thumb"><i class="fas fa-graduation-cap"></i></div>
@@ -419,6 +399,10 @@ router.on('/lesson/:id', async (lessonId) => {
     app.innerHTML = '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i><span>تحميل الدرس...</span></div>';
 
     const lesson = await api.get(`/api/lessons/${lessonId}`);
+
+    if (window.StudentActivity && typeof window.StudentActivity.recordLessonVisit === 'function') {
+      window.StudentActivity.recordLessonVisit(lesson.id);
+    }
 
     // Process PPTX, Videos and Images
     let mediaHTML = '';

@@ -53,7 +53,16 @@
       <div class="sidebar-help-wrap">
         <div class="sidebar-help-box">
           <p class="sidebar-help-text">تحتاج مساعدة؟</p>
-          <a href="#" class="sidebar-help-link">اتصل بالإدارة</a>
+          <div class="sidebar-help-actions">
+            <a href="tel:+96871723897" class="sidebar-help-link">
+              <i class="fas fa-phone"></i>
+              <span>اتصال هاتفي</span>
+            </a>
+            <a href="https://wa.me/96871723897" target="_blank" rel="noopener" class="sidebar-help-link sidebar-help-whatsapp">
+              <i class="fab fa-whatsapp"></i>
+              <span>واتساب</span>
+            </a>
+          </div>
         </div>
       </div>
     </aside>
@@ -77,6 +86,34 @@
         </div>
       </header>
 
+      <!-- Global Search & Filters -->
+      <div class="student-global-search">
+        <div class="student-search-input-wrapper">
+          <i class="fas fa-search"></i>
+          <input
+            id="globalSearchInput"
+            type="search"
+            placeholder="ابحث في الصفوف والوحدات والدروس..."
+            autocomplete="off"
+            aria-label="بحث في الصفوف والوحدات والدروس"
+          />
+        </div>
+
+        <div class="student-filters" id="studentFilterBar">
+          <span class="student-filters-label">تصفية النتائج:</span>
+          <button type="button" class="filter-chip" data-filter-type="type" data-filter-value="class">الصفوف</button>
+          <button type="button" class="filter-chip" data-filter-type="type" data-filter-value="unit">الوحدات</button>
+          <button type="button" class="filter-chip" data-filter-type="type" data-filter-value="lesson">الدروس</button>
+          <button type="button" class="filter-chip" data-filter-type="term" data-filter-value="1">الفصل الأول</button>
+          <button type="button" class="filter-chip" data-filter-type="term" data-filter-value="2">الفصل الثاني</button>
+          <button type="button" class="filter-chip filter-chip-reset" id="studentFiltersReset">
+            إعادة ضبط
+          </button>
+        </div>
+
+        <div id="globalSearchResults" class="student-search-results"></div>
+      </div>
+
       <!-- Dynamic App Section -->
       <div id="app">
         <div class="loading">
@@ -93,13 +130,16 @@
       <i class="fas fa-home"></i>
     </div>
     <div class="nav-item" data-navigate="/classes">
-      <i class="fas fa-grid-2"></i>
+      <i class="fas fa-book-open"></i>
     </div>
   </nav>
 
   <!-- Core Scripts -->
   <script src="/config.js"></script>
   <script src="/app.js?v=2.0.0"></script>
+  <script src="/dashboard.js?v=2.0.0"></script>
+  <script src="/filters.js?v=2.0.0"></script>
+  <script src="/search.js?v=2.0.0"></script>
 </body>
 
 </html>
